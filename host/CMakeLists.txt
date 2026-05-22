@@ -10,6 +10,7 @@ add_library(host_lib
 )
 
 target_include_directories(host_lib PUBLIC
+    ${CMAKE_SOURCE_DIR}/vendors/cpp-httplib
     ${CMAKE_SOURCE_DIR}/vendors/asio-1.36.0/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )

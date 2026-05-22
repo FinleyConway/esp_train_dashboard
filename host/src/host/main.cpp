@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <httplib.h>
+
 #include "host/networking/tcp_server.hpp"
 #include "host/logging/logger.hpp"
 
@@ -19,35 +21,26 @@ void on_disconnect(common::esp_id_t id) {
 
 int main() {
     host::logger_t::init();
-    host::tcp_server_t server;
+    host::tcp_server_t tcp_server;
 
-    server.register_receive_callback<common::init_esp_t, &on_esp_init>();
-    server.register_on_connect(on_connect);
-    server.register_on_disconnect(on_disconnect);
+    tcp_server.register_receive_callback<common::init_esp_t, &on_esp_init>();
+    tcp_server.register_on_connect(on_connect);
+    tcp_server.register_on_disconnect(on_disconnect);
+    tcp_server.start();
 
-    server.start();
-    if (server.toggle_accepting(true) != host::tcp_status_t::success) {
+    if (tcp_server.toggle_accepting(true) == host::tcp_status_t::fail_to_accept) {
+        LOG_INFO("tcp_server not able to accept");
+
         return -1;
     }
 
-    while(server.is_running()) {
-        std::string x;
+    httplib::Server http_server;
 
-        std::cout << "Input:\n";
-        std::cin >> x;
+    http_server.Get("/api/esp/:id", [&](const httplib::Request& req, httplib::Response& res) {
+        auto id = std::stoi(req.path_params.at("id"));
 
-        auto status = server.send_to_client(0, common::init_esp_t(1));
+        tcp_server.send_to_client(id, common::init_esp_t(0));
+    });
 
-        if (status == host::tcp_status_t::success) {
-            LOG_INFO("init_esp_t was sent to esp!");
-        }
-
-        if (status == host::tcp_status_t::unknown_client) {
-            LOG_INFO("Client could not be found!");
-        }
-
-        if (status == host::tcp_status_t::no_client_connection) {
-            LOG_INFO("Client lost connection?");
-        }
-    }
+    http_server.listen("0.0.0.0", 8081);
 }
