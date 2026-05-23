@@ -36,10 +36,11 @@ int main() {
 
     httplib::Server http_server;
 
-    http_server.Get("/api/esp/:id", [&](const httplib::Request& req, httplib::Response& res) {
-        auto id = std::stoi(req.path_params.at("id"));
-
-        tcp_server.send_to_client(id, common::init_esp_t(0));
+    http_server.Get("/api/esp/", [&](const httplib::Request& req, httplib::Response& res) {
+        auto status = tcp_server.send_to_client(0, common::motor_control_t{
+            .ramp_time_ms = 7500,
+            .target_speed = 700
+        });
     });
 
     http_server.listen("0.0.0.0", 8081);

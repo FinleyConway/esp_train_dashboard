@@ -4,22 +4,22 @@
 #include "networking/wifi.hpp"
 #include "networking/tcp_client.hpp"
 
-void init_gpio() {
-    gpio_reset_pin(GPIO_NUM_27);
-    gpio_set_direction(GPIO_NUM_27, GPIO_MODE_OUTPUT);
-}
+#include "motor.hpp"
 
-void on_esp_init(common::init_esp_t) {
-    static bool state = false;
+client::motor_t motor;
 
-    state = !state;
+void on_motor_control(const common::motor_control_t& motor_control) {
+    ESP_LOGI("MOTOR", "%d", motor_control.target_speed);
+    ESP_LOGI("MOTOR", "%d", motor_control.ramp_time_ms);
 
-    gpio_set_level(GPIO_NUM_27, state);
+    motor.set_motor_direction(client::motor_direction_t::clockwise);
+    motor.set_motor_speed(motor_control.target_speed);
 }
 
 extern "C" void app_main() {
     nvs_flash_init();
-    init_gpio();
+
+    motor.init(GPIO_NUM_23, GPIO_NUM_22);
 
     client::wifi_status_t status = client::wifi_boot_t::connect();
 
@@ -31,7 +31,7 @@ extern "C" void app_main() {
 
     client::tcp_client_t c;
     
-    c.register_receieve_callback<common::init_esp_t, &on_esp_init>();
+    c.register_receieve_callback<common::motor_control_t, &on_motor_control>();
 
     if (c.try_connect() == client::tcp_status_t::success) { 
 
