@@ -81,6 +81,7 @@ namespace common {
             const auto& callback = m_callback[id];
 
             if (callback.invoke == nullptr) return false; // nothing to call
+            if (bytes < sizeof(packet_id_t)) return false; // prevent underflow
             if (bytes - sizeof(packet_id_t) != callback.size) return false; // byte mismatch
 
             callback.invoke(std::span<uint8_t> {
@@ -104,14 +105,14 @@ namespace common {
             };
         }
 
-        size_t packet_size(packet_id_t id) const {
+        size_t expected_payload_size(packet_id_t id) const {
             if (id >= m_callback.size()) return 0;
             return m_callback[id].size;
         }
         
         template<typename T>
-        size_t packet_size() const {
-            return m_callback.at(get_type_of<T>()).size;
+        constexpr size_t packet_size() {
+            return sizeof(packet_id_t) + T::payload_size();
         }
 
     private:

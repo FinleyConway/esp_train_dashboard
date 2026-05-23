@@ -4,16 +4,18 @@
 
 #include "common/api/service_config.hpp"
 
+#include <esp_log.h>
+
 namespace client {
     int tcp_client_t::get_socket() const {
         return m_socket;
     }
 
     tcp_status_t tcp_client_t::try_connect() {
-        const struct addrinfo hints = {
-            .ai_family = AF_INET,
-            .ai_socktype = SOCK_STREAM
-        };
+        addrinfo hints = {};
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_protocol = IPPROTO_IP;
         struct addrinfo* res;
 
         constexpr const char* host = common::service_config_t::hostname;
@@ -67,7 +69,7 @@ namespace client {
 
         if (status != tcp_status_t::success) return status;
 
-        const size_t expected_payload_bytes = m_registry.packet_size(received_id);
+        const size_t expected_payload_bytes = m_registry.expected_payload_size(received_id);
         const bool has_payload = expected_payload_bytes != 0;
 
         if (!has_payload) return tcp_status_t::unknown_packet;
@@ -110,6 +112,8 @@ namespace client {
         size_t id_bytes_read = 0;
 
         status = recv_exact(payload.data(), packet_id_size, id_bytes_read);
+
+        if (status != tcp_status_t::success) return 0;
 
         // get the payload size from the received id
         common::packet_id_t received_id = 0;

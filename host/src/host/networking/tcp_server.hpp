@@ -52,7 +52,7 @@ namespace host {
 
             const bool success = it->second->send(
                 m_registry.create(data),
-                m_registry.packet_size<T>() + sizeof(common::esp_id_t)
+                m_registry.packet_size<T>()
             );
 
             if (!success) return tcp_status_t::no_client_connection;
