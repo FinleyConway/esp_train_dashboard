@@ -48,6 +48,10 @@ namespace client {
     }
 
     tcp_status_t tcp_client_t::disconnect() {
+        if (m_socket < 0) {
+            return tcp_status_t::failure;
+        }
+
         if (close(m_socket) < 0) {
             return tcp_status_t::socket_failure;
         }

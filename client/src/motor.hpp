@@ -47,6 +47,14 @@ namespace client {
             return m_is_active;
         }
 
+        uint32_t get_current_duty() const {
+            return m_current_duty;
+        }
+
+        motor_direction_t get_current_direction() const {
+            return m_current_direction;
+        }
+
         void set_motor_direction(motor_direction_t direction) {
             if (direction == motor_direction_t::clockwise) {
                 ledc_set_duty(MOTOR_PWM_MODE, LEDC_CHANNEL_0, m_current_duty);
@@ -98,7 +106,7 @@ namespace client {
         }
 
     private:
-        motor_direction_t m_current_direction = motor_direction_t::none;
+        motor_direction_t m_current_direction = motor_direction_t::clockwise;
         uint32_t m_current_duty = 0;
         bool m_is_active = true;
     };

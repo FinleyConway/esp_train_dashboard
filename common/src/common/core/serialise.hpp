@@ -62,6 +62,11 @@ namespace common {
             return arr;
         }
 
+        template <typename... Ts>
+        static constexpr size_t message_size() {
+            return (sizeof(Ts) + ...);
+        }
+
     private:
         template<typename T>
         static T swap_bytes(T value) {

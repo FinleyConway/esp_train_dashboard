@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <httplib.h>
+#include <nlohmann/json.hpp>
 
 #include "host/networking/tcp_server.hpp"
 #include "host/logging/logger.hpp"
@@ -17,6 +18,26 @@ void on_connect(common::esp_id_t id) {
 
 void on_disconnect(common::esp_id_t id) {
     LOG_INFO("ESP: {} disconnected", id);
+}
+
+void send_tcp_response(httplib::Response& res, host::tcp_status_t status) {
+    switch (status) {
+        case host::tcp_status_t::success:
+            res.status = 200;
+            res.set_content(
+                R"({"status":"applied"})",
+                "application/json"
+            );
+            break;
+
+        default:
+            res.status = 500;
+            res.set_content(
+                R"({"error":"tcp error"})",
+                "application/json"
+            );
+            break;
+    }
 }
 
 int main() {
@@ -36,11 +57,36 @@ int main() {
 
     httplib::Server http_server;
 
-    http_server.Get("/api/esp/", [&](const httplib::Request& req, httplib::Response& res) {
-        auto status = tcp_server.send_to_client(0, common::motor_control_t{
-            .ramp_time_ms = 7500,
-            .target_speed = 700
-        });
+    http_server.Post("/api/motor_control", [&](const httplib::Request& req, httplib::Response& res) {
+        try {
+            const auto body = nlohmann::json::parse(req.body);
+
+            const auto esp_id       = body.at("esp_id").get<common::esp_id_t>();
+            const auto is_active    = body.at("is_active").get<bool>();
+            const auto target_duty  = body.at("target_duty").get<uint32_t>();
+            const auto ramp_time_ms = body.at("ramp_time_ms").get<uint16_t>();
+
+            host::tcp_status_t status;
+
+            if (is_active) {
+                status = tcp_server.send_to_client(esp_id, common::motor_speed_t{
+                    .ramp_time_ms = ramp_time_ms,
+                    .target_duty  = target_duty
+                });
+            }
+            else {
+                status = tcp_server.send_to_client(esp_id, common::motor_stop_t{}); // this aint working yet tho
+            }
+
+            send_tcp_response(res, status);
+        }
+        catch (const std::exception& e) {
+            res.status = 400;
+            res.set_content(
+                R"({"error":"invalid json payload"})",
+                "application/json"
+            );
+        }
     });
 
     http_server.listen("0.0.0.0", 8081);

@@ -6,14 +6,48 @@
 
 #include "motor.hpp"
 
+#include <cmath>
+
 client::motor_t motor;
 
-void on_motor_control(const common::motor_control_t& motor_control) {
-    ESP_LOGI("MOTOR", "%d", motor_control.target_speed);
-    ESP_LOGI("MOTOR", "%d", motor_control.ramp_time_ms);
+static float ease(float x) {
+    return -(std::cos(M_PI * x) - 1) / 2;
+}
+
+static void adjust_motor_speed(uint16_t current_speed, uint16_t target_duty, uint16_t ramp_speed_ms) {
+    float a = static_cast<float>(current_speed);
+    float b = static_cast<float>(target_duty);
+
+    const float loop_ms = 50.0f;
+    const float time_step = loop_ms / static_cast<float>(ramp_speed_ms);
+    float time = 0.0f;
 
     motor.set_motor_direction(client::motor_direction_t::clockwise);
-    motor.set_motor_speed(motor_control.target_speed);
+
+    while (time < 1.0f) {
+        float time_ease = ease(time);
+        float value = std::lerp(a, b, std::clamp(time_ease, 0.0f, 1.0f));
+
+        motor.set_motor_speed(static_cast<uint32_t>(value));
+
+        time += time_step;
+
+        vTaskDelay(pdMS_TO_TICKS(loop_ms));
+    }
+
+    motor.set_motor_speed(target_duty);
+}
+
+void on_motor_speed_change(const common::motor_speed_t& motor_control) {
+    adjust_motor_speed(
+        motor.get_current_duty(),
+        motor_control.target_duty,
+        motor_control.ramp_time_ms
+    );
+}
+
+void on_motor_stop(common::motor_stop_t) {
+    motor.set_active_state(false);
 }
 
 extern "C" void app_main() {
@@ -31,7 +65,8 @@ extern "C" void app_main() {
 
     client::tcp_client_t c;
     
-    c.register_receieve_callback<common::motor_control_t, &on_motor_control>();
+    c.register_receieve_callback<common::motor_speed_t, &on_motor_speed_change>();
+    c.register_receieve_callback<common::motor_stop_t, &on_motor_stop>();
 
     if (c.try_connect() == client::tcp_status_t::success) { 
 
