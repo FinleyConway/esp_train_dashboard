@@ -21,6 +21,7 @@ target_compile_definitions(host_lib PUBLIC
 
 target_link_libraries(host_lib PUBLIC
     spdlog::spdlog_header_only
+    nlohmann_json::nlohmann_json
     common
 )
 
