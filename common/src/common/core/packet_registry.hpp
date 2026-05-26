@@ -105,15 +105,17 @@ namespace common {
             };
         }
 
-        size_t expected_payload_size(packet_id_t id) const {
-            if (id >= m_callback.size()) return 0;
-            return m_callback[id].size;
+        std::optional<size_t> expected_payload_size(packet_id_t id) const {
+            if (id >= m_callback.size()) return std::nullopt;
+            return std::make_optional(m_callback[id].size);
         }
         
         template<typename T>
         constexpr size_t packet_size() {
             return sizeof(packet_id_t) + T::payload_size();
         }
+
+
 
     private:
         std::array<callback_info_t, sizeof...(Ts)> m_callback;

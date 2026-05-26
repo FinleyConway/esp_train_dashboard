@@ -64,18 +64,18 @@ TEST_CASE( "packet_registry class", "[packet_registry]" ) {
     reg_t registry;
 
     SECTION("Get packet size") {
-        size_t bytes_1 = registry.expected_payload_size(0);
+        auto bytes_1 = registry.expected_payload_size(0);
         size_t bytes_2 = registry.packet_size<test_one_t>();
 
-        REQUIRE(bytes_1 == 0);
+        REQUIRE(bytes_1.value() == 0);
         REQUIRE(bytes_2 == 0);
 
         registry.register_callback<test_one_t, &test_one_callback>();
 
-        size_t reg_bytes_1 = registry.expected_payload_size(0);
+        auto reg_bytes_1 = registry.expected_payload_size(0);
         size_t reg_bytes_2 = registry.packet_size<test_one_t>();
 
-        REQUIRE(reg_bytes_1 == 2);
+        REQUIRE(reg_bytes_1.value() == 2);
         REQUIRE(reg_bytes_2 == 2);
     }
 

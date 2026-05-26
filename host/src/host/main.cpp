@@ -75,7 +75,8 @@ int main() {
                 });
             }
             else {
-                status = tcp_server.send_to_client(esp_id, common::motor_stop_t{}); // this aint working yet tho
+                // pointless but tests no-data messages
+                status = tcp_server.send_to_client(esp_id, common::motor_stop_t{}); 
             }
 
             send_tcp_response(res, status);

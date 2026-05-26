@@ -67,18 +67,17 @@ namespace client {
 
     tcp_status_t tcp_client_t::listen_to_server() {
         tcp_status_t status;
-        common::payload_t payload;
+        common::payload_t payload{};
 
         const common::packet_id_t received_id = recv_payload_id(payload, status);
 
         if (status != tcp_status_t::success) return status;
 
-        const size_t expected_payload_bytes = m_registry.expected_payload_size(received_id);
-        const bool has_payload = expected_payload_bytes != 0;
+        const std::optional<size_t> expected_payload_bytes = m_registry.expected_payload_size(received_id);
 
-        if (!has_payload) return tcp_status_t::unknown_packet;
+        if (!expected_payload_bytes.has_value()) return tcp_status_t::unknown_packet;
 
-        const size_t payload_bytes = recv_payload(expected_payload_bytes, payload, status);
+        const size_t payload_bytes = recv_payload(expected_payload_bytes.value(), payload, status);
 
         if (status != tcp_status_t::success) return status;
 

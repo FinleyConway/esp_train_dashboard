@@ -88,13 +88,13 @@ namespace host {
 
         LOG_ASSERT(m_registry != nullptr, "m_registry is nullptr!");
 
-        size_t size = m_registry->expected_payload_size(m_read_state.id);
+        std::optional<size_t> size = m_registry->expected_payload_size(m_read_state.id);
 
-        LOG_ASSERT(size != 0, "Packet size is not registered!");
+        LOG_ASSERT(!size.has_value(), "Packet size is not registered!");
 
         asio::async_read(
             m_socket,
-            asio::buffer(m_read_state.payload.data(), size),
+            asio::buffer(m_read_state.payload.data(), size.value()),
             [this](const std::error_code& ec, size_t bytes_transferred) {
                 if (!has_or_handle_io_error(ec)) {
                     LOG_ASSERT(m_registry != nullptr, "m_registry is nullptr!");

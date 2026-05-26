@@ -39,6 +39,8 @@ static void adjust_motor_speed(uint16_t current_speed, uint16_t target_duty, uin
 }
 
 void on_motor_speed_change(const common::motor_speed_t& motor_control) {
+    motor.set_active_state(true);
+
     adjust_motor_speed(
         motor.get_current_duty(),
         motor_control.target_duty,
