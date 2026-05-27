@@ -11,12 +11,12 @@ namespace client {
         return m_socket;
     }
 
-    tcp_status_t tcp_client_t::try_connect() {
+    tcp_status_t tcp_client_t::try_connect(int64_t timeout_sec) {
         addrinfo hints = {};
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
         hints.ai_protocol = IPPROTO_IP;
-        struct addrinfo* res = nullptr;
+        addrinfo* res = nullptr;
 
         constexpr const char* host = common::service_config_t::hostname;
         constexpr const char* port = common::service_config_t::port;
@@ -29,6 +29,13 @@ namespace client {
                 return tcp_status_t::socket_failure;
             }
 
+            // allow recv to wake up just incase my wifi explodes
+            timeval timeout {
+                .tv_sec = timeout_sec,
+                .tv_usec = 0
+            };
+            setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
             if (connect(socket_fd, res->ai_addr, res->ai_addrlen) < 0) {
                 close(socket_fd);
                 freeaddrinfo(res);
@@ -37,7 +44,6 @@ namespace client {
             }
 
             m_socket = socket_fd;
-
 
             return tcp_status_t::success;
         }
@@ -103,7 +109,13 @@ namespace client {
                 0
             );
 
-            if (result == -1) return tcp_status_t::failure;
+            if (result < 0) {
+                if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                    return tcp_status_t::timeout;
+                }
+
+                return tcp_status_t::failure;
+            } 
             if (result == 0) return tcp_status_t::connection_closed;
 
             bytes_read += result;
