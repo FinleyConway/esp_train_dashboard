@@ -76,18 +76,19 @@ namespace client {
             m_current_direction = direction;
         }
 
-        void set_motor_speed(uint32_t speed) {
+        // TT motor seems to be only min of 650 before it starts turinng
+        void set_motor_duty(uint32_t duty) {
             if (!m_is_active) {
                 ESP_LOGW("MOTOR", "Motor is not active");
                 return;
             }
 
-            if (speed > MOTOR_MAX_DUTY) {
-                ESP_LOGW("MOTOR", "Given speed is more then motor max duty!");
+            if (duty > MOTOR_MAX_DUTY) {
+                ESP_LOGW("MOTOR", "Given duty is more then motor max duty!");
                 return;
             }
 
-            m_current_duty = speed;
+            m_current_duty = duty;
                 
             set_motor_direction(m_current_direction);
         }

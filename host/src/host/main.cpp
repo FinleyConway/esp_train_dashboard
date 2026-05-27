@@ -61,23 +61,18 @@ int main() {
         try {
             const auto body = nlohmann::json::parse(req.body);
 
-            const auto esp_id       = body.at("esp_id").get<common::esp_id_t>();
-            const auto is_active    = body.at("is_active").get<bool>();
-            const auto target_duty  = body.at("target_duty").get<uint32_t>();
-            const auto ramp_time_ms = body.at("ramp_time_ms").get<uint16_t>();
+            const auto esp_id        = body.at("esp_id").get<common::esp_id_t>();
+            const auto is_active     = body.at("is_active").get<bool>();
+            const auto starting_duty = body.at("starting_duty").get<uint32_t>();
+            const auto target_duty   = body.at("target_duty").get<uint32_t>();
+            const auto ramp_time_ms  = body.at("ramp_time_ms").get<uint16_t>();
 
-            host::tcp_status_t status;
-
-            if (is_active) {
-                status = tcp_server.send_to_client(esp_id, common::motor_speed_t{
-                    .ramp_time_ms = ramp_time_ms,
-                    .target_duty  = target_duty
-                });
-            }
-            else {
-                // pointless but tests no-data messages
-                status = tcp_server.send_to_client(esp_id, common::motor_stop_t{}); 
-            }
+            host::tcp_status_t status = tcp_server.send_to_client(esp_id, common::motor_control_t {
+                .starting_duty = starting_duty,
+                .target_duty = target_duty,
+                .ramp_time_ms = ramp_time_ms,
+                .is_active = is_active
+            });
 
             send_tcp_response(res, status);
         }
