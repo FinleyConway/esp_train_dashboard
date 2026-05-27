@@ -65,7 +65,6 @@ namespace client {
             // TODO: Add retry attempts
 
             constexpr TickType_t retry_delay = pdMS_TO_TICKS(5000);
-            tcp_status_t connection_status;
             
             while (client.try_connect() != tcp_status_t::success) {
                 vTaskDelay(retry_delay);

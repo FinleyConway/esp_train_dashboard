@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstring>
 #include <array>
+#include <span>
 #include <bit>
 
 #define EMPTY_MESSAGE(type)                                                     \

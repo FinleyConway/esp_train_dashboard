@@ -67,6 +67,16 @@ int main() {
             const auto target_duty   = body.at("target_duty").get<uint32_t>();
             const auto ramp_time_ms  = body.at("ramp_time_ms").get<uint16_t>();
 
+            /*
+            {
+                "esp_id": 0,
+                "is_active": false,
+                "starting_duty": 750,
+                "target_duty": 1023,
+                "ramp_time_ms": 7500
+            }
+            */
+
             host::tcp_status_t status = tcp_server.send_to_client(esp_id, common::motor_control_t {
                 .starting_duty = starting_duty,
                 .target_duty = target_duty,

@@ -51,28 +51,30 @@ namespace client {
             float start = static_cast<float>(motor_control.starting_duty);
             float end = static_cast<float>(motor_control.target_duty);
 
-            const float loop_ms = 50.0f;
-            const float time_step = loop_ms / static_cast<float>(motor_control.ramp_time_ms);
-            float time = 0.0f;
+            const TickType_t start_tick = xTaskGetTickCount();
 
             motor.set_motor_direction(client::motor_direction_t::clockwise);
 
-            while (time < 1.0f) {
-                float time_ease = ease(time);
-                float value = std::lerp(start, end, std::clamp(time_ease, 0.0f, 1.0f));
+            while (true) {
+                TickType_t now = xTaskGetTickCount();
+                float elapsed_ms = (now - start_tick) * portTICK_PERIOD_MS;
 
-                motor.set_motor_duty(static_cast<uint32_t>(value));
+                float t = elapsed_ms / static_cast<float>(motor_control.ramp_time_ms);
+                if (t >= 1.0f) break;
 
-                time += time_step;
+                float eased = ease(std::clamp(t, 0.0f, 1.0f));
+                float value = std::lerp(start, end, eased);
 
-                vTaskDelay(pdMS_TO_TICKS(loop_ms));
+                motor.set_motor_duty(static_cast<uint32_t>(std::round(value)));
+
+                vTaskDelay(pdMS_TO_TICKS(10));
             }
 
             motor.set_motor_duty(motor_control.target_duty);
         }
 
         static float ease(float x) {
-            return -(std::cos(M_PI * x) - 1) / 2;
+            return x * x * x;
         }
 
     private:
