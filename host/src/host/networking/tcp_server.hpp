@@ -64,9 +64,10 @@ namespace host {
 
         tcp_status_t disconnect_client(common::esp_id_t client_id);
 
-        template<typename T, auto Fn>
-        void register_receive_callback() {
-            m_registry.register_callback<T, Fn>();
+        template<typename T, typename Fn>
+        void register_receive_callback(Fn&& fn) {
+            callback_holder_t<T>::fn = std::forward<Fn>(fn);
+            m_registry.template register_callback<T, callback_holder_t<T>::trampoline>();
         }
 
         void register_on_connect(on_connect_fn&& callback);
@@ -81,6 +82,18 @@ namespace host {
         void wait_for_connection();
 
         void create_new_connection(tcp_connection_ptr_t new_connection, const std::error_code& ec);
+
+    private:
+        // bit of a hack
+        // lets client have no heap alloc while host does whatever
+        template<typename T>
+        struct callback_holder_t {
+            static inline std::function<void(const T&)> fn;
+
+            static void trampoline(const T& value) {
+                fn(value);
+            }
+        };
 
     private:
         asio::io_context m_io_context;

@@ -20,8 +20,6 @@ namespace client {
                 tskIDLE_PRIORITY + priority_offset,
                 &s_handle
             );
-
-            motor_command_t::create();
         }
         
         static TaskHandle_t get_handle() {
@@ -54,6 +52,8 @@ namespace client {
                 client.disconnect();
             }
 
+            on_client_disconnect();
+
             vTaskDelete(nullptr);
         }
 
@@ -69,6 +69,15 @@ namespace client {
             while (client.try_connect() != tcp_status_t::success) {
                 vTaskDelay(retry_delay);
             }
+        }
+
+        static void on_client_disconnect() {
+            motor_command_t::send(common::motor_control_t {
+                .starting_duty = 0,
+                .target_duty = 0,
+                .ramp_time_ms = 0,
+                .is_active = false
+            });
         }
 
     private:

@@ -8,10 +8,6 @@
 
 #include "common/messages/init_esp.hpp"
 
-void on_esp_init(common::init_esp_t init_esp) {
-    LOG_INFO("Received from esp: {}", init_esp.id);
-}
-
 void on_connect(common::esp_id_t id) {
     LOG_INFO("ESP: {} connected", id);
 }
@@ -43,8 +39,12 @@ void send_tcp_response(httplib::Response& res, host::tcp_status_t status) {
 int main() {
     host::logger_t::init();
     host::tcp_server_t tcp_server;
+    httplib::Server http_server;
 
-    tcp_server.register_receive_callback<common::init_esp_t, &on_esp_init>();
+    tcp_server.register_receive_callback<common::init_esp_t>([&](const common::init_esp_t& init_esp){
+        LOG_INFO("Received from esp: {}", init_esp.id);
+    });
+    
     tcp_server.register_on_connect(on_connect);
     tcp_server.register_on_disconnect(on_disconnect);
     tcp_server.start();
@@ -55,7 +55,6 @@ int main() {
         return -1;
     }
 
-    httplib::Server http_server;
 
     http_server.Post("/api/motor_control", [&](const httplib::Request& req, httplib::Response& res) {
         try {
