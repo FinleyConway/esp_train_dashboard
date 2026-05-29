@@ -1,20 +1,12 @@
-#include <iostream>
-
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 
+#include "host/utils/handshake_handler.hpp"
 #include "host/networking/tcp_server.hpp"
 #include "host/logging/logger.hpp"
 
-#include "common/messages/init_esp.hpp"
-
-void on_connect(common::esp_id_t id) {
-    LOG_INFO("ESP: {} connected", id);
-}
-
-void on_disconnect(common::esp_id_t id) {
-    LOG_INFO("ESP: {} disconnected", id);
-}
+#include "common/messages/handshake.hpp"
+#include "common/messages/motor_control.hpp"
 
 void send_tcp_response(httplib::Response& res, host::tcp_status_t status) {
     switch (status) {
@@ -39,14 +31,22 @@ void send_tcp_response(httplib::Response& res, host::tcp_status_t status) {
 int main() {
     host::logger_t::init();
     host::tcp_server_t tcp_server;
+    host::handshake_manager_t handshake_manager(tcp_server, std::chrono::seconds(1));
+
     httplib::Server http_server;
 
-    tcp_server.register_receive_callback<common::init_esp_t>([&](const common::init_esp_t& init_esp){
-        LOG_INFO("Received from esp: {}", init_esp.id);
+    tcp_server.register_on_connect([&](common::esp_id_t id) {
+        handshake_manager.on_connect(id);
     });
-    
-    tcp_server.register_on_connect(on_connect);
-    tcp_server.register_on_disconnect(on_disconnect);
+
+    tcp_server.register_on_disconnect([&](common::esp_id_t id) {
+        LOG_INFO("ESP: {} disconnected", id);
+    });
+
+    tcp_server.register_receive_callback<common::esp_init_response_t>([&](const common::esp_init_response_t& res) {
+        handshake_manager.on_response_received(res);
+    });
+
     tcp_server.start();
 
     if (tcp_server.toggle_accepting(true) == host::tcp_status_t::fail_to_accept) {

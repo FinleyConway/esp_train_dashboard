@@ -16,6 +16,10 @@ namespace host {
         shutdown();
     }
 
+    asio::io_context& tcp_server_t::get_io_context() {
+        return m_io_context;
+    }   
+
     void tcp_server_t::start() {
         m_io_thread = std::thread([this] {
             m_mdns_service.start(
@@ -104,7 +108,7 @@ namespace host {
         m_on_connect_callback = std::move(callback);
     }
 
-    void tcp_server_t::register_on_disconnect(on_connect_fn&& callback) {
+    void tcp_server_t::register_on_disconnect(on_disconnect_fn&& callback) {
         m_on_disconnect_callback = std::move(callback);
     }
 

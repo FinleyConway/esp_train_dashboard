@@ -33,6 +33,8 @@ namespace host {
         tcp_server_t();
         ~tcp_server_t();
 
+        asio::io_context& get_io_context();
+
         void start();
 
         bool is_running() const;
