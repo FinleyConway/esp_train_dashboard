@@ -74,7 +74,7 @@ namespace host {
 
         void register_on_connect(on_connect_fn&& callback);
 
-        void register_on_disconnect(on_connect_fn&& callback);
+        void register_on_disconnect(on_disconnect_fn&& callback);
 
     private:
         void on_connect(common::esp_id_t id);

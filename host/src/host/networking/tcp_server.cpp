@@ -155,6 +155,7 @@ namespace host {
         new_connection->set_spec(m_connection_count, m_registry, [this](common::esp_id_t id) {
             on_disconnect(id);
         });
+        new_connection->set_receiving_state(true);
         m_connections.emplace(m_connection_count, new_connection);
 
         // call callback

@@ -31,7 +31,7 @@ void send_tcp_response(httplib::Response& res, host::tcp_status_t status) {
 int main() {
     host::logger_t::init();
     host::tcp_server_t tcp_server;
-    host::handshake_manager_t handshake_manager(tcp_server, std::chrono::seconds(1));
+    host::handshake_manager_t handshake_manager(tcp_server, std::chrono::seconds(5));
 
     httplib::Server http_server;
 
@@ -47,6 +47,7 @@ int main() {
         handshake_manager.on_response_received(res);
     });
 
+    tcp_server.receive_from_client(true);
     tcp_server.start();
 
     if (tcp_server.toggle_accepting(true) == host::tcp_status_t::fail_to_accept) {

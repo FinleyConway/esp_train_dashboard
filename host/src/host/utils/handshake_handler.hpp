@@ -45,7 +45,10 @@ namespace host {
         void on_response_received(const common::esp_init_response_t& res) {
             // check if the responded id exits
             auto it = m_session.find(res.id);
-            if (it == m_session.end()) return;
+            if (it == m_session.end()) {
+                LOG_WARN("Unknown id response: {}", res.id);
+                return;    
+            }
 
             // stop the session timer due to responded
             it->second.cancel();

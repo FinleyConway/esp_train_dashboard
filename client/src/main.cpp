@@ -3,6 +3,7 @@
 #include "networking/wifi.hpp"
 
 #include "task_events/motor_command.hpp"
+#include "task_events/tcp_send_event.hpp"
 
 #include "tasks/tcp_task.hpp"
 #include "tasks/motor_task.hpp"
@@ -18,6 +19,7 @@ extern "C" void app_main() {
         return;
     }
 
+    client::tcp_send_event_t::create(10);
     client::motor_command_t::create();
 
     client::tcp_task_t::init(2);

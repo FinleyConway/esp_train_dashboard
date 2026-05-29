@@ -35,8 +35,6 @@ namespace host {
     private:
         ip::tcp::socket m_socket;
         tcp_io_state_t m_io_state;
-
-        common::esp_id_t m_id = 0;
     };
 
     using tcp_connection_ptr_t = tcp_connection_t::pointer_t;
